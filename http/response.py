@@ -38,6 +38,9 @@ class ToXML:
 
 
 class JSONResponse:
+    def __init__(self, data: Optional[Any] = None, status_code: int = 200):
+        self.data, self.status_code = data, status_code
+
     def __new__(cls, data: Optional[Any] = None, status_code: int = 200, *args, **kargs) -> HttpResponse:
         instance = super(JSONResponse, cls).__new__(cls)
         instance.data = data
@@ -52,6 +55,9 @@ class JSONResponse:
 
 
 class XMLResponse:
+    def __init__(self, data: Optional[Any] = None, status_code: int = 200):
+        self.data, self.status_code = data, status_code
+
     def __new__(cls, data: Optional[Any] = None, status_code: int = 200, *args, **kargs) -> HttpResponse:
         instance = super(XMLResponse, cls).__new__(cls)
         instance.data = data
