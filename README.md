@@ -13,7 +13,7 @@ pip install -e .
 ```python
 import logging
 import azure.functions as func
-from azf_wrappers.http.response import JSONResponse, XMLResponse
+from azf_wrappers.http import JSONResponse, XMLResponse
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
