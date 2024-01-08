@@ -69,3 +69,17 @@ class XMLResponse:
 
     def to_http_response(self, *args, **kargs) -> HttpResponse:
         return HttpResponse(body=self.to_xml(), status_code=self.status_code, mimetype="application/xml", *args, **kargs)
+
+
+class BoolResponse:
+    def __init__(self, data: bool = True, status_code: int = 200):
+        self.data, self.status_code = data, status_code
+
+    def __new__(cls, data: bool = True, status_code: int = 200, *args, **kargs) -> HttpResponse:
+        instance = super(BoolResponse, cls).__new__(cls)
+        instance.data = data
+        instance.status_code = status_code
+        return instance.to_http_response(*args, **kargs)
+
+    def to_http_response(self, *args, **kargs) -> HttpResponse:
+        return HttpResponse(body=str(self.data), status_code=self.status_code, *args, **kargs)
