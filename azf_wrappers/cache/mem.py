@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict, Tuple, Callable, get_origin
+from typing import Optional, Any, Dict, Tuple, Callable
 from datetime import datetime, timedelta
 from sqlite3 import connect
 
@@ -45,19 +45,19 @@ class KVDBCache:
         return func
 
     def _get_dtype(self, data: Any) -> str:
-        dtype = get_origin(data)
+        dtype = type(data)
         return dtype.__name__ if dtype else str(dtype)
 
     def get(self, key) -> Optional[Any]:
         cached_data: Optional[Tuple[str, str, str, datetime]] = self.cache.execute("SELECT * FROM cache WHERE key = ?", [key]).fetchone()
         if cached_data is None: return None
         dtype = self._get_dtype_func(cached_data[2])
-        return dtype(cached_data[1]) if cached_data and self.is_valid(cached_data[3]) else None 
+        return dtype(cached_data[1]) if cached_data and self.is_valid(datetime.strptime(cached_data[3], "%Y-%m-%d %H:%M:%S.%f")) else None 
 
     def set(self, key: str, data: Any, expiration_seconds=5) -> None:
         expiration_time = datetime.utcnow() + timedelta(seconds=expiration_seconds)
-        self.cache.execute("INSERT INTO cache values (?, ?, ?, ?)", [key, data, data.__name__, expiration_time])
+        self.cache.execute("INSERT INTO cache values (?, ?, ?, ?)", [key, data, self._get_dtype(data), expiration_time])
 
     def is_valid(self, expiration_time: datetime) -> None: return expiration_time and expiration_time > datetime.utcnow()
 
-    def clear(self) -> None: self.cache.executemany(f"DROP TABLE IF EXISTS cache; {self._TABLE}")
+    def clear(self) -> None: self.cache.executescript(f"DROP TABLE IF EXISTS cache; {self._TABLE}")
