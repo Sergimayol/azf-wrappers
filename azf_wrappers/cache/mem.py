@@ -1,6 +1,7 @@
 from typing import Optional, Any, Dict, Tuple, Callable
 from datetime import datetime, timedelta
-from sqlite3 import connect
+from sqlite3 import connect, Binary
+from pickle import dumps, loads
 
 
 class KVMapCache:
@@ -21,40 +22,21 @@ class KVMapCache:
     def clear(self) -> None: self.cache = {}
 
 class KVDBCache:
-    _TABLE = "CREATE TABLE IF NOT EXISTS cache(key TEXT PRIMARY KEY, data TEXT, dtype TEXT NOT NULL, exp_t DATETIME);"
+    _TABLE = "CREATE TABLE IF NOT EXISTS cache(key TEXT PRIMARY KEY, data BLOB, dtype TEXT NOT NULL, exp_t DATETIME);"
     def __init__(self): 
         self.cache = connect(":memory:")
         self.cache.execute(self._TABLE)
-
-    def _get_dtype_func(self, dtype: str) -> Callable:
-        type_mapping: Dict[str, Callable[..., Any]] = {
-            "dict": dict,
-            "str": str,
-            "list": list,
-            "tuple": tuple,
-            "set": set,
-            "int": int,
-            "float": float,
-            "bool": bool,
-            "bytes": bytes,
-            "bytearray": bytearray,
-            "NoneType": type(None)
-        }
-        func = type_mapping.get(dtype)
-        if func is None: raise ValueError(f"Data type is not supported yet: {dtype}")
-        return func
 
     def _get_dtype(self, data: Any) -> str: return type(data).__name__
 
     def get(self, key) -> Optional[Any]:
         cached_data: Optional[Tuple[str, str, str, datetime]] = self.cache.execute("SELECT * FROM cache WHERE key = ?", [key]).fetchone()
         if cached_data is None: return None
-        dtype = self._get_dtype_func(cached_data[2])
-        return dtype(cached_data[1]) if cached_data and self.is_valid(datetime.strptime(cached_data[3], "%Y-%m-%d %H:%M:%S.%f")) else None 
+        return loads(cached_data[1]) if cached_data and self.is_valid(datetime.strptime(cached_data[3], "%Y-%m-%d %H:%M:%S.%f")) else None 
 
     def set(self, key: str, data: Any, expiration_seconds=5) -> None:
         expiration_time = datetime.utcnow() + timedelta(seconds=expiration_seconds)
-        self.cache.execute("INSERT INTO cache values (?, ?, ?, ?)", [key, data, self._get_dtype(data), expiration_time])
+        self.cache.execute("INSERT INTO cache values (?, ?, ?, ?)", [key, Binary(dumps(data)), self._get_dtype(data), expiration_time])
 
     def is_valid(self, expiration_time: datetime) -> None: return expiration_time and expiration_time > datetime.utcnow()
 
