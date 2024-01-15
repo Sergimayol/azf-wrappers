@@ -44,9 +44,7 @@ class KVDBCache:
         if func is None: raise ValueError(f"Data type is not supported yet: {dtype}")
         return func
 
-    def _get_dtype(self, data: Any) -> str:
-        dtype = type(data)
-        return dtype.__name__ if dtype else str(dtype)
+    def _get_dtype(self, data: Any) -> str: return type(data).__name__
 
     def get(self, key) -> Optional[Any]:
         cached_data: Optional[Tuple[str, str, str, datetime]] = self.cache.execute("SELECT * FROM cache WHERE key = ?", [key]).fetchone()
@@ -61,3 +59,5 @@ class KVDBCache:
     def is_valid(self, expiration_time: datetime) -> None: return expiration_time and expiration_time > datetime.utcnow()
 
     def clear(self) -> None: self.cache.executescript(f"DROP TABLE IF EXISTS cache; {self._TABLE}")
+
+    def __del__(self) -> None: self.cache.close()
