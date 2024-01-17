@@ -15,4 +15,6 @@ if __name__ == "__main__":
     print(f"WITH VALUES 4: {cache.get('Hello')}")
     cache.clear()
     cache.set("Hello", (1, "world"))
+    cache.remove("Hello")
+    print(f"WITH VALUES 5: {cache.get('Hello')}")
     del cache

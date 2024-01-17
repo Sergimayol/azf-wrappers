@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict, Tuple, Callable
+from typing import Optional, Any, Dict, Tuple
 from datetime import datetime, timedelta
 from sqlite3 import connect, Binary
 from pickle import dumps, loads
@@ -19,7 +19,11 @@ class KVMapCache:
         expiration_time = cached_data.get("expiration_time")
         return expiration_time and expiration_time > datetime.utcnow()
 
+    def remove(self, key: str) -> None: self.cache.pop(key)
+
     def clear(self) -> None: self.cache = {}
+
+    def __del__(self) -> None: del self.cache
 
 class KVDBCache:
     _TABLE = "CREATE TABLE IF NOT EXISTS cache(key TEXT PRIMARY KEY, data BLOB, dtype TEXT NOT NULL, exp_t DATETIME);"
@@ -40,6 +44,8 @@ class KVDBCache:
 
     def is_valid(self, expiration_time: datetime) -> None: return expiration_time and expiration_time > datetime.utcnow()
 
-    def clear(self) -> None: self.cache.executescript(f"DROP TABLE IF EXISTS cache; {self._TABLE}")
+    def remove(self, key: str) -> None: self.cache.execute("DELETE FROM cache WHERE key = ?;", [key])
+
+    def clear(self) -> None: self.cache.execute("DELETE FROM cache;")
 
     def __del__(self) -> None: self.cache.close()
