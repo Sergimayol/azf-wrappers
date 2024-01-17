@@ -36,7 +36,7 @@ class KVDBCache:
 
     def set(self, key: str, data: Any, expiration_seconds=5) -> None:
         expiration_time = datetime.utcnow() + timedelta(seconds=expiration_seconds)
-        self.cache.execute("INSERT INTO cache values (?, ?, ?, ?)", [key, Binary(dumps(data)), self._get_dtype(data), expiration_time])
+        self.cache.execute("INSERT OR REPLACE INTO cache values (?, ?, ?, ?)", [key, Binary(dumps(data)), self._get_dtype(data), expiration_time])
 
     def is_valid(self, expiration_time: datetime) -> None: return expiration_time and expiration_time > datetime.utcnow()
 
